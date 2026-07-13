@@ -68,6 +68,9 @@
 | 3+ подряд Edit/Write в исходниках без паузы, ИЛИ 2+ раз подряд правлю свои же ошибки (компил/линтер/тест), ИЛИ одна проблема сопротивляется >15 мин | `mid-retro` в Auto-mode | Ответить пользователю по 5 вопросам (что сделал / скоуп / ошибки / follow-up / надо ли переспросить) |
 | Сразу после успешного `task-done` (после commit+push) | `self-review` в Auto-mode | Ревью diff'а по 5 категориям, обязательный акцент на пункт E (улучшения меня самого) |
 | Долгая dev-команда выбивается за 2× baseline (см. «Долгие команды» ниже) без выхлопа в stdout | без skill | Диагностика: `ps`, stdout, внешние зависимости (Docker, порты). Эскалировать пользователю раньше чем ставить очередной wakeup |
+| Баг / упавший тест / неожиданное поведение | `superpowers:systematic-debugging` | Не пытаться сразу фиксить — гипотеза → эксперимент → вывод. Особенно важно если проблема сопротивляется дольше ~10 минут |
+| Новая фича с ясным acceptance criteria | `superpowers:test-driven-development` | До реализации — написать провальные тесты по каждому AC, потом реализация до зелёного. Отсекает «сделал и не проверил» |
+| Многошаговый plan есть (`docs/superpowers/plans/*.md`) — начинаем прогон | `superpowers:executing-plans` | Дисциплинированный прогон с checkpoint'ами, а не «зачитал и побежал» |
 
 ## Проактивное заведение задач (Auto-mode для `task-add`)
 
@@ -132,6 +135,26 @@ Refs: docs/tasks/T-XXX-*.md
 ### Что коммитим совместно
 
 Изменения в исходниках + связанные `docs/*.md` + запись в таске = **один commit**.
+
+## Superpowers integration
+
+Наши 7 skills — оркестраторы. `superpowers:*` — процессные инструменты внутри. Карта wire-points:
+
+| # | Триггер | Наш slot | Superpowers-skill |
+|---|---------|----------|-------------------|
+| 1 | `/task-add` non-trivial задачи | шаг перед созданием файла | `superpowers:brainstorming` |
+| 2 | Многошаговая задача, spec есть | между `task-add` и кодингом | `superpowers:writing-plans` |
+| 3 | Перед flip'ом status→done | шаг в `task-done` | `superpowers:verification-before-completion` |
+| 4 | Баг / упавший тест / неожиданное поведение | триггер в таблице «Проактивные триггеры» выше | `superpowers:systematic-debugging` |
+| 5 | Перед прогоном 5 категорий self-review | шаг 2 в `self-review` | `superpowers:receiving-code-review` (внутренний диалог) |
+| 6 | Новая фича с acceptance criteria | триггер в таблице | `superpowers:test-driven-development` |
+| 7 | Прогон существующего plan'а | триггер в таблице | `superpowers:executing-plans` |
+
+**Правила:**
+- Разграничение обязанностей: наши skills — учёт (файл-таск, INDEX, git), superpowers — процессная дисциплина.
+- Не создавать новые skills для того, что superpowers уже покрывает.
+- Не переписывать superpowers — только звать.
+- Артефакты superpowers'ов кладутся в `docs/superpowers/specs/` и `docs/superpowers/plans/`.
 
 ## Стилевые ограничения
 
