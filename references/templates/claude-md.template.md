@@ -89,6 +89,7 @@ Ritual — **однократный** на сессию. Не повторять
 | `/mid-retro` | Пауза внутри задачи для само-осмотра (скоуп, ошибки, follow-up'ы) | нет |
 | `/self-review` | После `task-done`: ревью diff'а по 5 категориям (акцент — улучшения меня) | иногда micro-fix commit |
 | `/pre-flight` | Между дизайном/анализом и первым Edit/Write в исходниках — 3 вопроса: assumptions, risks, reversibility. Для non-trivial и high-stakes зон | нет |
+| `/harness-update` | Sync `.claude/skills/` проекта с последними templates из harness-репо. Explicit-only (пользователь запрашивает вручную). Показывает diff-summary + spawns commit + push | commit + push |
 
 ## Проактивные триггеры (без явной команды)
 
