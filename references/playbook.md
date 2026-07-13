@@ -192,6 +192,20 @@ docs/tasks/
 
 **После apply — записать `.claude/harness-sync-state.json`:** для каждого установленного harness-managed skill'а — sha256 текущего содержимого + `harness_sha` (git-sha harness-репо). Файл коммитится в git (team-consistency detect'а кастомизации в будущих `/harness-update`). Формат см. в `references/skills/harness-update.md` → Часть A → шаг 5.
 
+## Фаза 6.5: Optional hooks (settings.json)
+
+Спросить пользователя: «Включить рекомендованные harness hooks в `.claude/settings.json` проекта? (y/n) — задокументировано в `references/settings-json-template.md`».
+
+Если `y`:
+- Прочитать `references/settings-json-template.md` → hook fragment для Stop-события.
+- Записать `.claude/settings.json` (project-scope, коммитится в git).
+- Добавить `.claude/last-committed-head.txt` в `.gitignore` (state hook'а, per-clone).
+- Напомнить пользователю: hook применится после первого `/hooks` открытия в UI или после перезапуска сессии.
+
+Если `n` или уже существует `.claude/settings.json` — пропустить.
+
+**Важно:** hooks — project-scope (`.claude/settings.json`), НЕ user-scope. Blast radius под контролем.
+
 Если `.claude/settings.local.json` уже существует — не трогать вообще.
 
 ## Фаза 7: CLAUDE.md
