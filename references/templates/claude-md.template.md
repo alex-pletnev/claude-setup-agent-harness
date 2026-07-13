@@ -250,11 +250,17 @@ Baseline'ы для этого проекта (с прогретым кэшем):
 
 **Ключевая интуиция:** молча ждать больше 5 минут без диагностики = плохо. False-alarm диагностика стоит 30 секунд, false-negative ожидание — 20+ минут. Всегда лучше эскалировать раньше.
 
-### Универсальное правило для long-running команд с эксклюзивным lock'ом (gradle daemon, docker build, cargo, npm)
+### Универсальное правило для long-running команд с эксклюзивным lock'ом (gradle daemon, docker build, cargo, npm, sbt, mvn)
 
-1. **Никогда не пайпить long-running команду через `| tail -N`.** Pipe буферизует stdout — Bash-tool считает команду висящей и переводит в фон, а фактический процесс (daemon / test executor) продолжает жить. Правильно: `<cmd> > /tmp/out.log 2>&1` + отдельная команда `tail -5 /tmp/out.log` после завершения.
-2. **Проверять есть ли висящий инстанс до запуска нового.** Пример для gradle: `ps -eo pid,command | grep -E "gradlew|GradleWorker" | grep -v grep | wc -l`. Если > 0 — либо ждать через `until grep -qE "BUILD SUCCESSFUL|BUILD FAILED" /tmp/out.log; do sleep 3; done`, либо спросить пользователя (нельзя kill'ать чужие процессы без разрешения).
-3. **Один активный запуск на repo одновременно.** Если запустил через `run_in_background=true` — дождись `task-notification completed` до следующего запуска, не наслаивай.
+**Root cause** большинства «команда висит N минут» — Bash-tool не гарантирует foreground-выполнение для команд с редким stdout. `| tail`, `until sleep`-loops, `tail -f` — всё это молча уезжает в фон, а сам процесс (daemon / test executor) продолжает держать lock. Следующий запуск ждёт вечно.
+
+**Единственно правильный паттерн:**
+
+1. **Любая long-running команда с эксклюзивным lock'ом** запускается через `Bash(run_in_background=true)` с редиректом в файл: `<cmd> > /tmp/<name>.log 2>&1`. Никаких pipe'ов, никаких `tail -f`, никаких `until`-loops.
+2. **Wait — только по task-notification.** Дождался `completed` → отдельным вызовом `tail -N /tmp/<name>.log`. Ни при каких условиях не polling'ать через sleep.
+3. **Перед подозрительным запуском** (после kill'а, после долгого висения, после смены зависимостей / build-конфига, после падения непонятно почему) — прогнать команду отпускания daemon lock'ов (`./gradlew --stop`, `docker builder prune -f`, `cargo clean`, `sbt clean-daemons`, etc.), тоже фоном + notification.
+4. **Проверять «есть ли живой инстанс» до запуска нового:** `ps -eo pid,command | grep -E "<daemon-pattern>" | grep -v grep | wc -l`. Если > 0 — либо ждать текущий (п.2), либо явно stop (п.3), либо спросить пользователя killять чужой процесс.
+5. **Один активный запуск на repo одновременно.** Второй не наслаивай — только после `completed`-notification'а первого.
 
 ## Что не делать
 
