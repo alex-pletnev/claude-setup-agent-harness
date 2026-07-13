@@ -4,7 +4,11 @@
 
 **НЕ устанавливать в user-scope `~/.claude/settings.json`** — hooks сработают во всех проектах, blast radius.
 
+> **Source of truth:** JSON-файлы в `references/settings-hooks/*.json`. Часть C `/harness-update` читает только их. Этот markdown — человеко-читаемая документация «зачем каждый hook нужен».
+
 ## Hook 1 — Stop-hook: reminder про self-review после commit'а
+
+**Source:** `references/settings-hooks/self-review-reminder.json`
 
 **Что делает:** на событии `Stop` (когда Claude завершает итерацию) сравнивает current `HEAD` с сохранённым в `.claude/last-committed-head.txt`. Если различаются — значит в этой итерации был commit → инжектит в контекст reminder «прогони /self-review до ответа пользователю».
 
@@ -47,7 +51,7 @@
 
 **Новый проект** (через `/setup-agent-harness` — см. playbook Фаза 6.5): установщик спрашивает «включить рекомендованные hooks? (y/n)», при `y` записывает settings.json + добавляет строку в .gitignore.
 
-**Существующий проект:** пока руками, `/harness-update` не синхронизирует settings.json (см. T-039). Копируй fragment выше в `.claude/settings.json` + gitignore-строку.
+**Существующий проект:** `/harness-update` Часть C — sync hooks из `references/settings-hooks/*.json` в проектный `settings.json` с backup'ом, detect'ом local-customization и tracking'ом через `.claude/harness-sync-state.json`.
 
 **После install:** hook применится после первого `/hooks` открытия в UI или после перезапуска сессии — Claude Code watches settings.json только для директорий, где settings.json существовал при старте сессии.
 
