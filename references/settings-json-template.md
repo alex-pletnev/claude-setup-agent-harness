@@ -10,12 +10,14 @@
 
 **Source:** `references/settings-hooks/self-review-reminder.json`
 
-**Что делает:** на событии `Stop` (когда Claude завершает итерацию) сравнивает current `HEAD` с сохранённым в `.claude/last-committed-head.txt`. Если различаются — значит в этой итерации был commit → инжектит в контекст reminder «прогони /self-review до ответа пользователю».
+**Что делает:** на событии `Stop` (когда Claude завершает итерацию) сравнивает current `HEAD` с сохранённым в `.claude/last-committed-head.txt`. Если различаются — значит в этой итерации был commit → возвращает `{"decision":"block","reason":"…"}`. Claude Code интерпретирует это как «не останавливайся, вот причина» → модель получает reminder про self-review и продолжает работу в той же итерации.
+
+**Форма output'а для события Stop:** только top-level поля `continue|suppressOutput|stopReason|decision|reason|systemMessage`. `hookSpecificOutput.additionalContext` разрешён лишь для `UserPromptSubmit`/`PostToolUse` — для Stop он даёт ошибку валидации. JSON собираем через `python3 -m json` для корректного escape'а commit-message'а с любыми символами.
 
 **Почему безопасен:**
-- Не блокирует ничего. Если сломается — просто не будет напоминать (fallback = ручной self-review).
+- Guard `state_file`: следующий Stop на том же HEAD ничего не выводит → нет loop'а.
 - Обёрнут в `|| exit 0` / `2>/dev/null` — падение shell'а не разрушает hook.
-- Время выполнения ~50ms (git rev-parse + один file read).
+- Время выполнения ~50ms (git rev-parse + один file read + python3 startup).
 - State в gitignored `.claude/last-committed-head.txt` — не создаёт конфликтов между разработчиками.
 
 **settings.json (fragment):**
@@ -29,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\" || exit 0; current=$(git rev-parse HEAD 2>/dev/null || echo \"\"); state_file=\".claude/last-committed-head.txt\"; prev=$(cat \"$state_file\" 2>/dev/null || echo \"\"); if [ -n \"$current\" ] && [ \"$current\" != \"$prev\" ]; then echo \"$current\" > \"$state_file\"; short=$(git rev-parse --short \"$current\"); msg=$(git log -1 --format=%s \"$current\"); printf '{\"hookSpecificOutput\": {\"hookEventName\": \"Stop\", \"additionalContext\": \"В этой итерации был commit %s: %s. По правилу harness (self-review в Auto-mode) — прогони /self-review до ответа пользователю.\"}}\\n' \"$short\" \"$msg\"; fi",
+            "command": "cd \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\" || exit 0; current=$(git rev-parse HEAD 2>/dev/null || echo \"\"); state_file=\".claude/last-committed-head.txt\"; prev=$(cat \"$state_file\" 2>/dev/null || echo \"\"); if [ -n \"$current\" ] && [ \"$current\" != \"$prev\" ]; then echo \"$current\" > \"$state_file\"; short=$(git rev-parse --short \"$current\"); msg=$(git log -1 --format=%s \"$current\"); python3 -c 'import json,sys; print(json.dumps({\"decision\":\"block\",\"reason\":f\"В этой итерации был commit {sys.argv[1]}: {sys.argv[2]}. По правилу harness (self-review в Auto-mode) — прогони /self-review до ответа пользователю.\"}))' \"$short\" \"$msg\"; fi",
             "timeout": 5,
             "statusMessage": "Checking for new commit"
           }
