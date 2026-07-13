@@ -1,6 +1,6 @@
 ---
 name: setup-agent-harness
-description: Развернуть в текущем проекте (существующем или пустом) полную инфраструктуру для работы с AI-агентом — универсальную и не привязанную к языку/стеку. Устанавливает CLAUDE.md с правилами (включая карту интеграции с superpowers-skills), файловый task-трекер (docs/tasks/), 7 slash-skills (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review), генерирует документацию проекта из анализа кода, встраивает git-автоматизацию (commit+push). Use когда пользователь просит «настроить harness», «поставить трекер», «/setup-agent-harness», или в первый раз садится за проект и хочет системную настройку под работу с агентом.
+description: Развернуть в текущем проекте (существующем или пустом) полную инфраструктуру для работы с AI-агентом — универсальную и не привязанную к языку/стеку. Устанавливает CLAUDE.md с правилами (включая карту интеграции с superpowers-skills), файловый task-трекер (docs/tasks/), 8 slash-skills (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review, pre-flight), генерирует документацию проекта из анализа кода, встраивает git-автоматизацию (commit+push). Use когда пользователь просит «настроить harness», «поставить трекер», «/setup-agent-harness», или в первый раз садится за проект и хочет системную настройку под работу с агентом.
 ---
 
 # setup-agent-harness
@@ -27,6 +27,7 @@ description: Развернуть в текущем проекте (сущест
 | `references/skills/wheel-check.md` | Само-улучшение: проверка «не изобретаю ли велосипед» до нового кода |
 | `references/skills/mid-retro.md` | Само-улучшение: пауза для само-осмотра внутри задачи |
 | `references/skills/self-review.md` | Само-улучшение: ревью своего diff'а после `task-done` |
+| `references/skills/pre-flight.md` | Само-улучшение: 3 обязательных вопроса (assumptions/risks/reversibility) между дизайном и кодингом для non-trivial и high-stakes |
 
 ## Дефолты поведения (утверждены при создании skill'а)
 
@@ -46,7 +47,7 @@ description: Развернуть в текущем проекте (сущест
 3. **Analysis** (если проект непустой) — 4 параллельных Explore-агента по чек-листу.
 4. **Docs generation** — `docs/` c набором файлов, зависящим от профиля проекта (см. `docs-structure.md`).
 5. **Tracker setup** — `docs/tasks/README.md` + `INDEX.md` + seed-задачи из known-gaps (если анализ их выявил).
-6. **Skills install** — 7 skills копируются в `.claude/skills/` (4 таск-трекерных + 3 само-улучшения).
+6. **Skills install** — 8 skills копируются в `.claude/skills/` (4 таск-трекерных + 4 само-улучшения).
 7. **CLAUDE.md** — рендер из шаблона с подставленными параметрами (стек, git-политика).
 8. **Bootstrap commit** — commit всех новых файлов + **спросить пользователя** перед push.
 
@@ -54,7 +55,7 @@ description: Развернуть в текущем проекте (сущест
 
 - `docs/README.md` ссылается на все созданные doc-файлы.
 - `docs/tasks/INDEX.md` содержит хотя бы одну строку (если анализ выявил gaps) или помечен «пусто».
-- `.claude/skills/` содержит ровно 7 файлов (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review).
+- `.claude/skills/` содержит ровно 8 файлов (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review, pre-flight).
 - `CLAUDE.md` в корне — с корректным контекстом (стек, git-policy).
 - `git status --short` — чистое дерево или только созданные skill'ом файлы.
 - Если предыдущий CLAUDE.md был — backup существует.
