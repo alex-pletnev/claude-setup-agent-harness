@@ -189,6 +189,8 @@ docs/tasks/
 
 **Идемпотентный докат:** если из 9 файлов часть уже есть, а часть отсутствует — доложить недостающие. Это применимо к старым проектам, где harness был поставлен до появления skill'ов само-улучшения.
 
+**После apply — записать `.claude/harness-sync-state.json`:** для каждого установленного harness-managed skill'а — sha256 текущего содержимого + `harness_sha` (git-sha harness-репо). Файл коммитится в git (team-consistency detect'а кастомизации в будущих `/harness-update`). Формат см. в `references/skills/harness-update.md` → Часть A → шаг 5.
+
 Если `.claude/settings.local.json` уже существует — не трогать вообще.
 
 ## Фаза 7: CLAUDE.md
