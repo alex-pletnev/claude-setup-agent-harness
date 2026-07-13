@@ -216,6 +216,27 @@ mv CLAUDE.md CLAUDE.md.bak-YYYY-MM-DD-HHMMSS
 
 Если анализ фазы 3 выявил специфику (например, обязательный запуск миграций, специфичная система CI, критические инварианты) — добавить компактным списком в раздел «Проектные особенности».
 
+### 7.4 Записать harness-config.json
+
+Сохранить все placeholder-values, использованные в шаге 7.2, в `.claude/harness-config.json` — JSON-объект с ключами по названиям placeholder'ов из template'а. Файл **коммитится в git** (не в `.gitignore`), нужен для team-consistency рендера и для будущих `/harness-update` вызовов.
+
+Пример:
+
+```json
+{
+  "PROJECT_NAME": "myapp",
+  "STACK": "TypeScript/Next.js 14",
+  "PRIMARY_BRANCH": "main",
+  "BUILD_COMMAND": "pnpm build",
+  "TEST_COMMAND": "pnpm test",
+  "LANGUAGE": "RU",
+  "DURATION_BASELINES": "...markdown-таблица...",
+  "SPECIFIC_RULES": ""
+}
+```
+
+Если проект уже имел `.claude/harness-config.json` (повторный вызов `/setup-agent-harness`) — merge: сохранить существующие ключи, добавить новые если появились.
+
 ## Фаза 8: Bootstrap commit + push
 
 ### 8.1 Проверка
