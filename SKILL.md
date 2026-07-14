@@ -1,6 +1,6 @@
 ---
 name: setup-agent-harness
-description: Развернуть в текущем проекте (существующем или пустом) полную инфраструктуру для работы с AI-агентом — универсальную и не привязанную к языку/стеку. Устанавливает CLAUDE.md с правилами (включая карту интеграции с superpowers-skills), файловый task-трекер (docs/tasks/), 10 slash-skills (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review, pre-flight, harness-update, consolidate), генерирует документацию проекта из анализа кода, встраивает git-автоматизацию (commit+push). Use когда пользователь просит «настроить harness», «поставить трекер», «/setup-agent-harness», или в первый раз садится за проект и хочет системную настройку под работу с агентом.
+description: Развернуть в текущем проекте (существующем или пустом) полную инфраструктуру для работы с AI-агентом — универсальную и не привязанную к языку/стеку. Устанавливает CLAUDE.md с правилами (включая карту интеграции с superpowers-skills), файловый task-трекер (docs/tasks/), 10 slash-skills (task-add, task-done, task-sync, docs-sync, wheel-check, mid-retro, self-review, pre-flight, harness-update, consolidate), генерирует документацию проекта из анализа кода, встраивает git-автоматизацию (commit+push). Принимает необязательный свободный текстовый аргумент после команды — контекст проекта (например «жёсткий MVP, минимум обвязки» или «платёжная система, требуется audit trail»), из которого генерируется блок SPECIFIC_RULES для CLAUDE.md. Use когда пользователь просит «настроить harness», «поставить трекер», «/setup-agent-harness», или в первый раз садится за проект и хочет системную настройку под работу с агентом.
 ---
 
 # setup-agent-harness
@@ -30,6 +30,23 @@ description: Развернуть в текущем проекте (сущест
 | `references/skills/pre-flight.md` | Само-улучшение: 3 обязательных вопроса (assumptions/risks/reversibility) между дизайном и кодингом для non-trivial и high-stakes |
 | `references/skills/harness-update.md` | Утилита: sync `.claude/skills/` проекта с последними templates из harness'а (v1 — только skill'ы, CLAUDE.md — T-036) |
 | `references/skills/consolidate.md` | Само-улучшение: периодический sweep закрытых задач на кросс-задачные паттерны в E-категории self-review |
+
+## Аргумент (опциональный)
+
+После `/setup-agent-harness` можно писать свободный текст — контекст проекта. Формат не структурирован: одна фраза или абзац, RU или EN. Всё содержимое попадает в `PROJECT_CONTEXT` в `harness-config.json`, а skill интерпретирует его на фазе 2.5 в набор конкретных правил для секции `SPECIFIC_RULES` итогового CLAUDE.md.
+
+Примеры:
+
+| Пользовательский ввод | Куда транслируется |
+|-----------------------|---------------------|
+| `жёсткий MVP, скорость важнее качества, минимум обвязки` | Правила: пропускать pre-flight/self-review для <30 LOC изменений, PR ≤200 строк, docs — плейсхолдеры, task-файлы 5 строк |
+| `платёжная система, любая правка — с тестами, review, audit trail` | Правила: pre-flight для любой задачи ≥5 LOC, external code-reviewer subagent для каждого task-done, audit-log в docs/audit/ обязателен |
+| `research prototype, ломаем API часто, документация вторична` | Правила: не блокировать breaking changes, docs-sync опционален, task-файлы без acceptance-criteria допустимы |
+| `high-uptime сервис, любое изменение — с фичефлагом и rollback планом` | Правила: pre-flight обязательно с секцией «rollback», feature flags документируются в docs/flags.md, staged deployment mandatory |
+
+Если аргумент не передан — `PROJECT_CONTEXT` пустой, `SPECIFIC_RULES` рендерится как пустая строка (backward compatibility).
+
+Полная процедура интерпретации — в `references/playbook.md` → Фаза 2.5.
 
 ## Дефолты поведения (утверждены при создании skill'а)
 
