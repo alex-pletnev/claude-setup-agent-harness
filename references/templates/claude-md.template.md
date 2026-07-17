@@ -136,8 +136,13 @@ Skills вызываются автоматически в перечисленн
 | Задача трогает high-stakes зону (DB migration, security-config, deletion, prod-настройки, cross-cutting breaking API) | `pre-flight` в Auto-mode + external review в `task-done` | `pre-flight` обязателен даже для formally-trivial. При закрытии — Часть 3 Verification gate (user-check и/или subagent code-reviewer, см. `task-done.md`) |
 | После task-done, если с прошлой consolidation закрылось ≥10 задач | `consolidate` в Auto-mode | Одной строкой предложить пользователю запустить `/consolidate`; не запускать без confirm'а |
 | Баг / упавший тест / неожиданное поведение | `superpowers:systematic-debugging` | Не пытаться сразу фиксить — гипотеза → эксперимент → вывод. Особенно важно если проблема сопротивляется дольше ~10 минут |
-| Новая фича с ясным acceptance criteria | `superpowers:test-driven-development` | **RED→GREEN обязателен.** До реализации — написать провальные тесты по каждому AC и **прогнать их, увидеть FAIL** (сохранить в лог или ответе). Только потом — реализация до зелёного. Писать тесты «одним заходом» с impl'ом — считается нарушением: если impl и тест кривы согласованно, ошибка не будет замечена. Отсекает «сделал и не проверил» |
+| Новая фича с ясным acceptance criteria | `superpowers:test-driven-development` | **RED→GREEN обязателен.** До реализации — написать провальные тесты по каждому AC и **прогнать их, увидеть FAIL** (сохранить в лог или ответе). Только потом — реализация до зелёного. Правило включает **infrastructure/config/persistence-компоненты** — «unit малоинформативен без реальной БД» ≠ оправдание (mock/testcontainers/compose-fixture). Если реально нельзя — pre-flight должен объявить это явно. |
 | Многошаговый plan есть (`docs/superpowers/plans/*.md`) — начинаем прогон | `superpowers:executing-plans` | Дисциплинированный прогон с checkpoint'ами, а не «зачитал и побежал» |
+| Первый вызов внешнего CLI/SDK/API в сессии (cloud CLI, `gh`, `aws`, `curl` к незнакомому API) | без skill | Прочитать `<cli> <cmd> --help` или официальный docs-page ДО первого вызова. Не полагаться на память о синтаксисе (trust memory over reality — повторяющийся fault-mode) |
+| Правлю то же правило / секцию CLAUDE.md / skill / тот же файл 2+ раза внутри одной сессии | `superpowers:systematic-debugging` в Auto-mode | Искать root cause, а не патчить симптом. Leading indicator; сработавший в self-review категории E «reactive patchwork» означает, что этот триггер не сработал вовремя |
+| Diff трогает prod-only-конфиг или код помеченный prod-профилем (`@Profile("prod")`, `@ConditionalOnProperty`, `application-prod.*`) | без skill | До commit'а поднять runtime в prod-профиле или через `docker run` с prod-env. Локальный test-runner (Spring `check`, `pytest`, `jest`) не покрывает prod-профиль — свой набор env/deps |
+| Внутри сессии завёл follow-up с `priority: high` в harness/dev-опыте (hooks, git-automation, session-start) | без skill | 30-секундная оценка: fix виден и <15 минут — чинить inline, до `task-done` исходной. Иначе — упомянуть пользователю |
+| Pre-flight объявил отклонение от AC, но пользователь ответил общим «го» / «продолжай» без явного «да, отклоняйся» | без skill | Продублировать pre-commit одной строкой «commit'ю с отклонением от AC #N». Явный approve на pre-flight'е — обязателен для skip'а pre-commit-notice |
 
 ## Проактивное заведение задач (Auto-mode для `task-add`)
 
@@ -270,6 +275,7 @@ Baseline'ы для этого проекта (с прогретым кэшем):
 - Не устанавливать/обновлять зависимости без запроса.
 - Не force-пушить.
 - Не пушить в другие ветки/remote.
+- **Не Write/Edit существующий файл без `Read`-tool в текущей сессии.** `Bash cat`/`head` не удовлетворяет. Проверка перед первым Write: «читал ли я его через Read в этой conversation?».
 - **Не коммитить абсолютные пути и machine-specific настройки** (JDK путь, docker.host, локальные IP, hostname'ы, `/Users/*`, `/opt/*`, `C:\*`). Такие вещи → user-scope конфиг (`~/.gradle/gradle.properties`, `.envrc`, env var). Проверка перед commit'ом: `git diff --cached | grep -E '(/opt/\|/Users/\|/home/\|C:\\\\|127\.0\.0\.1\|~/)'` — совпадение = red flag.
 
 {{SPECIFIC_RULES}}
